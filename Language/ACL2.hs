@@ -85,17 +85,12 @@ sExpr a = case a of
   Obj     a   -> SA $ map sExpr a
   Lit     a   -> SV a
 
-check'' :: Bool -> [Expr] -> IO Bool
-check'' debug a = do
+check' :: [Expr] -> IO (Bool, String)
+check' a = do
   exe <- savedACL2
   (_, result, _) <- readProcessWithExitCode exe [] code
   let pass = not $ any (isPrefixOf "ACL2 Error") $ lines result
-  if debug
-    then do
-      putStrLn code
-      putStrLn result
-    else return ()
-  return pass
+  return (pass, result)
   where
   code = unlines $ map show a
   savedACL2 :: IO FilePath
@@ -106,10 +101,7 @@ check'' debug a = do
       Just a -> return $ a ++ "/saved_acl2"
 
 check :: [Expr] -> IO Bool
-check = check'' False
-
-check' :: [Expr] -> IO Bool
-check' = check'' True
+check a = check' a >>= return . fst
 
 uni :: String -> Expr -> Expr
 uni f a = call f [a]
